@@ -122,8 +122,8 @@ jobs:
     - name: ${{ matrix.platform }} sdk download
       run: |
         wget ${{ matrix.url_sdk }}
-         file_name=$(echo ${{matrix.url_sdk}} | awk -F/ '{print $NF}')
-        mkdir sdk && tar -xJf $file_name -C ./sdk --strip-components=1
+        file_name=$(echo ${{matrix.url_sdk}} | awk -F/ '{print $NF}')
+          mkdir sdk && tar -xJf $file_name -C ./sdk --strip-components=1
         cd sdk
 
     - name: SSH connection to Actions
@@ -176,15 +176,16 @@ jobs:
 
     - name: Save and Commit Passwall Packages
       run: |
-        git config --global user.email "pedram.ale@me.com"
-        git config --global user.name "peditx"
+        git config --global user.email "your-email@example.com"
+        git config --global user.name "Your Name"
         cd sdk
         mkdir -p ../artifacts/${{ matrix.platform }}
-        if [ ! -d "bin/" ]; then
-          echo "Directory bin/ does not exist. Creating it..."
-          mkdir bin/
+        if [ ! -d "sdk/bin/targets/" ]; then
+          echo "Directory bin/targets/ does not exist. Creating it..."
+          mkdir -p sdk/bin/targets/
         fi
-        find bin/ -name "*.ipk" -exec cp {} ../artifacts/${{ matrix.platform }}/ \;
+        find sdk/bin/targets/ -name "*.ipk" -exec cp {} ../artifacts/${{ matrix.platform }}/ \;
+        find sdk/bin/targets/ -name "Packages.gz" -exec cp {} ../artifacts/${{ matrix.platform }}/ \;
         cd ../artifacts
         git add .
         git commit -m "Add compiled packages for ${{ matrix.platform }}"
