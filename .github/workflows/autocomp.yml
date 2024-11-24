@@ -123,7 +123,7 @@ jobs:
       run: |
         wget ${{ matrix.url_sdk }}
         file_name=$(echo ${{matrix.url_sdk}} | awk -F/ '{print $NF}')
-          mkdir sdk && tar -xJf $file_name -C ./sdk --strip-components=1
+        mkdir sdk && tar -xJf $file_name -C ./sdk --strip-components=1
         cd sdk
 
     - name: SSH connection to Actions
@@ -174,19 +174,9 @@ jobs:
           fi
         done
 
-    - name: Save and Commit Passwall Packages
+    - name: Upload Packages to SFTP
       run: |
-        git config --global user.email "pedram.ale@me.com"
-        git config --global user.name "peditx"
+        sudo apt-get update
+        sudo apt-get install -y lftp
         cd sdk
-        mkdir -p ../artifacts/${{ matrix.platform }}
-        if [ ! -d "sdk/bin/targets/" ]; then
-          echo "Directory bin/targets/ does not exist. Creating it..."
-          mkdir -p sdk/bin/targets/
-        fi
-        find sdk/bin/targets/ -name "*.ipk" -exec cp {} ../artifacts/${{ matrix.platform }}/ \;
-        find sdk/bin/targets/ -name "Packages.gz" -exec cp {} ../artifacts/${{ matrix.platform }}/ \;
-        cd ../artifacts
-        git add .
-        git commit -m "Add compiled packages for ${{ matrix.platform }}"
-        git push origin main
+        lftp -e "mirror -R bin/targets/ /var/www/${{ matrix.platform }}; exit" -u ${{ secrets.SFTP_USER }},${{ secrets.SFTP_PASSWORD }} sftp://<your-sftp-server-address>
