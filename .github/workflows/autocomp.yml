@@ -34,7 +34,7 @@ jobs:
       - name: Copy Custom Packages
         run: |
           mkdir -p openwrt-sdk/package/custom
-          cp -r ./* openwrt-sdk/package/custom/
+          cp -r ./your-package-directory/* openwrt-sdk/package/custom/
 
       # Step 5: Build Packages for Each Architecture
       - name: Build Packages for Each Architecture
@@ -42,7 +42,9 @@ jobs:
           mkdir -p openwrt-sdk
           cp -r ./* openwrt-sdk/
           cd openwrt-sdk
+          # For each architecture in the architectures.txt file
           for arch in $(cat ../architectures.txt); do
+            echo "Building for architecture: $arch"
             # Load default config for architecture
             make defconfig ARCH=$arch
             # Build the package
@@ -52,14 +54,16 @@ jobs:
             cp bin/packages/$arch/*.ipk ../compiled-packages/$arch/
           done
 
-      # Step 6: Push Compiled Packages to Target Repository
+      # Step 6: Push to Target Repository
       - name: Push to Target Repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git clone https://github.com/peditx/passrepo.git target-repo
           cd target-repo
+          # Clear the target repository
           rm -rf *
+          # Copy compiled packages to the target repository
           cp -r ../compiled-packages/* .
           git add .
           git commit -m "Update compiled packages"
