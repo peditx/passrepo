@@ -11,6 +11,7 @@ on:
     paths-ignore:
       - '**.md'
       - '.github/**'
+  workflow_dispatch:
 
 env:
   TZ: Asia/Shanghai
@@ -124,6 +125,9 @@ jobs:
         file_name=$(echo ${{matrix.url_sdk}} | awk -F/ '{print $NF}')
         mkdir sdk && tar -xJf $file_name -C ./sdk --strip-components=1
         cd sdk
+
+    - name: SSH connection to Actions
+      uses: mxschmitt/action
 
     - name: SSH connection to Actions
       uses: mxschmitt/action-tmate@v3.13
