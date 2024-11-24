@@ -29,9 +29,13 @@ jobs:
           - mipsel_24kc
           - mipsel_74kc
           - mipsel_mips32
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set environment variable
+        run: echo "packages=xiaorouji/openwrt-passwall-packages" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -117,7 +121,7 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Add Passwall package
+       - name: Add Passwall package
         run: |
           cd sdk/package
           git clone https://github.com/xiaorouji/openwrt-passwall-packages
@@ -128,7 +132,6 @@ jobs:
           echo "CONFIG_AUTOREMOVE=n" >> .config
           echo "CONFIG_SIGNED_PACKAGES=n" >> .config
           ./scripts/feeds install -a -f -p passwall_packages
-
 
       - name: Build packages
         run: |
