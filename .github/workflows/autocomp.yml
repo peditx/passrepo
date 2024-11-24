@@ -109,16 +109,6 @@ jobs:
           CHANGED_DIRS=${CHANGED_DIRS%,}
           echo "CHANGED_DIRS=$CHANGED_DIRS" >> $GITHUB_ENV
 
-    - name: Initialization ${{ matrix.platform }} compile environment
-      run: |
-        docker rmi `docker images -q`
-        sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
-        echo "install packages!!!!!!"
-        sudo -E apt-get -qq update
-        sudo -E apt-get -qq install build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev python3-distutils python3-setuptools rsync swig unzip zlib1g-dev file wget
-        sudo -E apt-get -qq autoremove --purge
-        sudo -E apt-get -qq clean
-
     - name: ${{ matrix.platform }} sdk download
       run: |
         wget ${{ matrix.url_sdk }}
@@ -175,19 +165,15 @@ jobs:
         done
 
     - name: Create GitHub Release Tag
+      id: create_tag
       run: |
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
-        if git rev-parse "v1.0.5-${{ matrix.platform }}" >/dev/null 2>&1; then
-          echo "Tag v1.0.5-${{ matrix.platform }} already exists"
-          new_tag=$(date +"v1.0.5-${{ matrix.platform }}-%Y%m%d%H%M%S")
-          echo "Creating new tag: $new_tag"
-          git tag $new_tag -m "Release for ${{ matrix.platform }}"
-          git push origin $new_tag
-        else
-          git tag v1.0.5-${{ matrix.platform }} -m "Release for ${{ matrix.platform }}"
-          git push origin v1.0.5-${{ matrix.platform }}
-        fi
+        new_tag=v1.0.5-${{ matrix.platform }}-$(date +'%Y%m%d%H%M%S')
+        echo "Creating new tag: $new_tag"
+        git tag $new_tag -m "Release for ${{ matrix.platform }}"
+        git push origin $new_tag
+        echo "::set-output name=tag_name::$new_tag"
 
     - name: Save Passwall package for ${{ matrix.platform }}
       run: |
@@ -203,7 +189,7 @@ jobs:
       id: create_release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ steps.create_release.outputs.tag_name }}
+        tag_name: ${{ steps.create_tag.outputs.tag_name }}
         name: passwall release - ${{ matrix.platform }} - ${{ env.timestamp }}
         body: 'Release for architecture: ${{ matrix.platform }}'
 
