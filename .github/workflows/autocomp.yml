@@ -1,0 +1,131 @@
+name: Auto compilation testing
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+
+env:
+  TZ: Asia/Shanghai
+  packages: ${{ github.repository }}
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - x86_64
+          - aarch64_generic
+          - aarch64_cortex-a53
+          - aarch64_cortex-a72
+          - arm_cortex-a7
+          - arm_cortex-a7_neon-vfpv4
+          - arm_cortex-a8_vfpv3
+          - arm_cortex-a9
+          - arm_cortex-a9_neon
+          - arm_cortex-a9_vfpv3-d16
+          - arm_cortex-a15_neon-vfpv4
+          - mips_24kc
+          - mips_4kec
+          - mips_mips32
+          - mipsel_24kc
+          - mipsel_74kc
+          - mipsel_mips32
+        include:
+          - platform: x86_64
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/x86/64/openwrt-sdk-23.05.0-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          - platform: aarch64_generic
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/rockchip/armv8/openwrt-sdk-23.05.0-rockchip-armv8_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          - platform: aarch64_cortex-a53
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/mvebu/cortexa53/openwrt-sdk-23.05.0-mvebu-cortexa53_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          - platform: aarch64_cortex-a72
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/mvebu/cortexa72/openwrt-sdk-23.05.0-mvebu-cortexa72_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          - platform: arm_cortex-a7
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/mediatek/mt7629/openwrt-sdk-23.05.0-mediatek-mt7629_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+          - platform: arm_cortex-a7_neon-vfpv4
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/sunxi/cortexa7/openwrt-sdk-23.05.0-sunxi-cortexa7_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+          - platform: arm_cortex-a8_vfpv3
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/sunxi/cortexa8/openwrt-sdk-23.05.0-sunxi-cortexa8_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+          - platform: arm_cortex-a9
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/bcm53xx/generic/openwrt-sdk-23.05.0-bcm53xx-generic_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+          - platform: arm_cortex-a9_neon
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/zynq/generic/openwrt-sdk-23.05.0-zynq-generic_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+          - platform: arm_cortex-a9_vfpv3-d16
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/mvebu/cortexa9/openwrt-sdk-23.05.0-mvebu-cortexa9_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+          - platform: arm_cortex-a15_neon-vfpv4
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/ipq806x/generic/openwrt-sdk-23.05.0-ipq806x-generic_gcc-12.3.0_musl_eabi.Linux-x86_64.tar.xz
+          - platform: mips_24kc
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/ath79/generic/openwrt-sdk-23.05.0-ath79-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          - platform: mips_4kec
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/realtek/rtl838x/openwrt-sdk-23.05.0-realtek-rtl838x_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          - platform: mips_mips32
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/bcm63xx/generic/openwrt-sdk-23.05.0-bcm63xx-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          - platform: mipsel_24kc
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/ramips/rt288x/openwrt-sdk-23.05.0-ramips-rt288x_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          - platform: mipsel_74kc
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/ramips/rt3883/openwrt-sdk-23.05.0-ramips-rt3883_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+          - platform: mipsel_mips32
+            url_sdk: https://downloads.openwrt.org/releases/23.05.0/targets/bcm47xx/generic/openwrt-sdk-23.05.0-bcm47xx-generic_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@main
+      with:
+        fetch-depth: 0
+
+    - name: Setup variables
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          echo "BASE_SHA=$(git merge-base refs/remotes/origin/${{ github.base_ref }} ${{ github.event.pull_request.head.sha }})" >> $GITHUB_ENV
+          echo "HEAD_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+        elif [ "${{ github.event_name }}" == "push" ]; then
+          echo "BASE_SHA=${{ github.event.before }}" >> $GITHUB_ENV
+          echo "HEAD_SHA=${{ github.event.after }}" >> $GITHUB_ENV
+        fi
+
+    - name: Detect Changed Directories
+      id: detect-changes
+      run: |
+          CHANGED_DIRS=$(git diff --name-only $BASE_SHA $HEAD_SHA | awk -F'/' '{print $1}' | sort -u | tr '\n' ',')
+          CHANGED_DIRS=${CHANGED_DIRS%,}
+          echo "CHANGED_DIRS=$CHANGED_DIRS" >> $GITHUB_ENV
+
+    - name: Initialize SDK and Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev python3-distutils python3-setuptools rsync swig unzip zlib1g-dev file wget
+
+    - name: Download SDK for ${{ matrix.platform }}
+      run: |
+        wget ${{ matrix.url_sdk }}
+        sdk_dir="sdk-${{ matrix.platform }}"
+        mkdir $sdk_dir && tar -xJf $(basename ${{ matrix.url_sdk }}) -C $sdk_dir
+
+    - name: Setup OpenWrt SDK
+      run: |
+        cd ${{ matrix.platform }}
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: Compile for ${{ matrix.platform }}
+      run: |
+        cd ${{ matrix.platform }}
+        make defconfig
+        make -j$(nproc)
+
+    - name: Store compiled files to passrepo
+      run: |
+        mkdir -p "/path/to/passrepo/${{ matrix.platform }}"
+        cp -r ${{ matrix.platform }}/bin/* /path/to/passrepo/${{ matrix.platform }}/
+        git add .
+        git commit -m "Add compiled files for ${{ matrix.platform }}"
+        git push
