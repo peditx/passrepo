@@ -24,7 +24,10 @@ jobs:
       - name: Pull OpenWrt SDK Docker Image
         run: |
           docker pull openwrt/sdk:x86_64
-
+      - name: Fix Permissions
+        run: |
+          chmod -R 777 $GITHUB_WORKSPACE
+          
       # Step 4: Build Packages for All Architectures
       - name: Build Packages
         run: |
