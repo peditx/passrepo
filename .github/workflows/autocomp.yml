@@ -147,7 +147,6 @@ jobs:
         echo "CONFIG_ALL=n" >> .config
         echo "CONFIG_AUTOREMOVE=n" >> .config
         echo "CONFIG_SIGNED_PACKAGES=n" >> .config
-        echo "CONFIG_PACKAGE_luci-theme-peditx=y" >> .config  # اضافه کردن تم
         make defconfig
 
     - name: ${{ matrix.platform }} download
@@ -174,6 +173,13 @@ jobs:
             exit 1
           fi
         done
+
+    - name: Create GitHub Release Tag
+      run: |
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
+        git tag v1.0.5-${{ matrix.platform }} -m "Release for ${{ matrix.platform }}"
+        git push origin v1.0.5-${{ matrix.platform }}
 
     - name: Save Passwall package for ${{ matrix.platform }}
       run: |
