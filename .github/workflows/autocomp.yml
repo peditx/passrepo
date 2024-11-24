@@ -122,7 +122,7 @@ jobs:
     - name: ${{ matrix.platform }} sdk download
       run: |
         wget ${{ matrix.url_sdk }}
-           file_name=$(echo ${{matrix.url_sdk}} | awk -F/ '{print $NF}')
+         file_name=$(echo ${{matrix.url_sdk}} | awk -F/ '{print $NF}')
         mkdir sdk && tar -xJf $file_name -C ./sdk --strip-components=1
         cd sdk
 
@@ -176,6 +176,8 @@ jobs:
 
     - name: Save and Commit Passwall Packages
       run: |
+        git config --global user.email "pedram.ale@me.com"
+        git config --global user.name "peditx"
         cd sdk
         mkdir -p ../artifacts/${{ matrix.platform }}
         if [ ! -d "bin/" ]; then
