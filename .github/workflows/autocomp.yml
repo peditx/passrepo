@@ -131,6 +131,7 @@ jobs:
           echo "CONFIG_ALL=n" >> .config
           echo "CONFIG_AUTOREMOVE=n" >> .config
           echo "CONFIG_SIGNED_PACKAGES=n" >> .config
+          echo "CONFIG_PACKAGE_luci-theme-peditx=y" >> .config
           ./scripts/feeds install -a -f -p passwall_packages
 
       - name: Build packages
