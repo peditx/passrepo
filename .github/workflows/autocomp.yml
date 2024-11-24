@@ -122,11 +122,11 @@ jobs:
           cd sdk/package
           git clone https://github.com/xiaorouji/openwrt-passwall-packages
           cd ..
-           echo "CONFIG_ALL_NONSHARED=n" > .config
-           echo "CONFIG_ALL_KMODS=n" >> .config
-           echo "CONFIG_ALL=n" >> .config
-           echo "CONFIG_AUTOREMOVE=n" >> .config
-           echo "CONFIG_SIGNED_PACKAGES=n" >> .config
+          echo "CONFIG_ALL_NONSHARED=n" > .config
+          echo "CONFIG_ALL_KMODS=n" >> .config
+          echo "CONFIG_ALL=n" >> .config
+          echo "CONFIG_AUTOREMOVE=n" >> .config
+          echo "CONFIG_SIGNED_PACKAGES=n" >> .config
           ./scripts/feeds install -a -f -p passwall_packages
 
 
@@ -161,11 +161,10 @@ jobs:
             xray-plugin
           )
 
-
           for PACKAGE in "${PACKAGES[@]}"; do
             make package/$PACKAGE/compile -j8 V=sc
           done
-          
+
       - name: Save Passwall package for ${{ matrix.architecture }}
         run: |
           cd sdk
