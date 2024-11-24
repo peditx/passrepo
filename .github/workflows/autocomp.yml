@@ -1,4 +1,4 @@
-name: Build and Push Custom Packages
+name: Build and Push Custom Packages with Docker
 
 on:
   push:
@@ -15,55 +15,40 @@ jobs:
       - name: Checkout Source Repository
         uses: actions/checkout@v3
 
-      # Step 2: Install Dependencies for OpenWrt SDK
-      - name: Install Dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential libncurses5-dev gawk git gettext unzip file libssl-dev wget python3
+      # Step 2: Set up Docker
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
 
-      # Step 3: Set up OpenWrt SDK
-      - name: Setup OpenWrt SDK
+      # Step 3: Pull OpenWrt SDK Docker Image
+      - name: Pull OpenWrt SDK Docker Image
         run: |
-          git clone https://github.com/openwrt/openwrt.git
-          cd openwrt
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-          cd ..
+          docker pull openwrt/sdk:x86-64-23.5.0
 
-      # Step 4: Copy Custom Packages from Source Repo to OpenWrt SDK
-      - name: Copy Custom Packages
+      # Step 4: Run OpenWrt SDK inside Docker container
+      - name: Run OpenWrt SDK Build in Docker
         run: |
-          mkdir -p openwrt-sdk/package/custom
-          cp -r ./your-package-directory/* openwrt-sdk/package/custom/
+          docker run --rm -v $(pwd):/workspace openwrt/sdk:x86-64-23.5.0 bash -c "
+            cd /workspace &&
+            mkdir -p openwrt-sdk/package/custom &&
+            cp -r ./your-package-directory/* openwrt-sdk/package/custom/ &&
+            cd openwrt-sdk &&
+            for arch in \$(cat ../architectures.txt); do
+              echo 'Building for architecture: \$arch';
+              make defconfig ARCH=\$arch &&
+              make package/compile ARCH=\$arch &&
+              mkdir -p ../compiled-packages/\$arch &&
+              cp bin/packages/\$arch/*.ipk ../compiled-packages/\$arch/;
+            done
+          "
 
-      # Step 5: Build Packages for Each Architecture
-      - name: Build Packages for Each Architecture
-        run: |
-          mkdir -p openwrt-sdk
-          cp -r ./* openwrt-sdk/
-          cd openwrt-sdk
-          # For each architecture in the architectures.txt file
-          for arch in $(cat ../architectures.txt); do
-            echo "Building for architecture: $arch"
-            # Load default config for architecture
-            make defconfig ARCH=$arch
-            # Build the package
-            make package/compile ARCH=$arch
-            # Ensure IPK files are copied
-            mkdir -p ../compiled-packages/$arch
-            cp bin/packages/$arch/*.ipk ../compiled-packages/$arch/
-          done
-
-      # Step 6: Push to Target Repository
+      # Step 5: Push Compiled Packages to Target Repository
       - name: Push to Target Repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git clone https://github.com/peditx/passrepo.git target-repo
           cd target-repo
-          # Clear the target repository
           rm -rf *
-          # Copy compiled packages to the target repository
           cp -r ../compiled-packages/* .
           git add .
           git commit -m "Update compiled packages"
