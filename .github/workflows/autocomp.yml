@@ -1,4 +1,4 @@
-name: Build and Deploy OpenWrt Packages
+name: Build and Release OpenWrt Packages for All Architectures
 
 on:
   push:
@@ -7,58 +7,76 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-packages:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout Repository A
-      - name: Checkout Repository A
+      # Step 1: Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Define Architectures
-      - name: Define Architectures
+      # Step 2: Install Dependencies
+      - name: Install Dependencies
         run: |
-          echo "x86_64 arm_cortex-a9 mipsel_24kc mips_24kc aarch64_generic powerpc_8540" > architectures.txt
+          sudo apt-get update
+          sudo apt-get install -y build-essential libncurses5-dev gawk git gettext unzip zlib1g-dev file python3 python3-distutils curl
 
-      # Step 3: Pull OpenWrt SDK Docker Image
-      - name: Pull OpenWrt SDK Docker Image
+      # Step 3: Build for All Architectures
+      - name: Build for All Architectures
         run: |
-          docker pull openwrt/sdk:x86_64
-      - name: Fix Permissions
-        run: |
-          chmod -R 777 $GITHUB_WORKSPACE
-          
-      # Step 4: Build Packages for All Architectures
-      - name: Build Packages
-        run: |
-          docker run --rm \
-            -v $GITHUB_WORKSPACE:/workspace \
-            openwrt/sdk:x86_64 bash -c "
-              set -e
-              TMP_OUTPUT_DIR=\$(mktemp -d)
-              mkdir -p \$TMP_OUTPUT_DIR
-              cp -r /workspace/* /sdk/package/custom
-              ./scripts/feeds update -a
-              ./scripts/feeds install -a
-              for arch in \$(cat /workspace/architectures.txt); do
-                echo 'Building for architecture: \$arch'
-                make defconfig
-                make package/compile V=s ARCH=\$arch
-                mkdir -p \$TMP_OUTPUT_DIR/\$arch
-                cp bin/packages/\$arch/*.ipk \$TMP_OUTPUT_DIR/\$arch/
-              done
-              cp -r \$TMP_OUTPUT_DIR/* /workspace/output/
-            "
+          architectures=(
+            aarch64_cortex-a53
+            aarch64_cortex-a72
+            aarch64_generic
+            arm_arm1176jzf-s_vfp
+            arm_cortex-a15_neon-vfpv4
+            arm_cortex-a7_neon-vfpv4
+            arm_cortex-a8_vfpv3
+            i386_pentium4
+            mips_mips32
+            mipsel_mips32
+            mips_24kc
+            mipsel_24kc
+            powerpc_8540
+            x86_64
+            arm_cortex-a9
+            arm_cortex-m3
+            armv8_64
+          )
 
-      # Step 5: Push Compiled Packages to Repository B
-      - name: Push to Repository B
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git clone https://github.com/peditx/passrepo.git passrepo
-          cd passrepo
-          rm -rf *
-          cp -r ../output/* .
-          git add .
-          git commit -m "Update compiled packages"
-          git push origin main
+          for arch in "${architectures[@]}"; do
+            echo "Building for architecture: $arch"
+            
+            # Download and extract the SDK
+            wget https://downloads.openwrt.org/releases/23.05.0/targets/$arch/openwrt-sdk-23.05.0-$arch_gcc-12.3.0_musl.Linux-x86_64.tar.xz -O sdk.tar.xz
+            mkdir sdk && tar -xJf sdk.tar.xz -C sdk --strip-components=1
+
+            # Setup SDK and feeds
+            cd sdk
+            echo "src-git packages https://github.com/openwrt/packages.git" > feeds.conf.default
+            echo "src-git luci https://github.com/openwrt/luci.git" >> feeds.conf.default
+            ./scripts/feeds update -a
+            ./scripts/feeds install -a
+
+            # Add custom packages
+            cp -r $GITHUB_WORKSPACE/* ./package/custom/
+
+            # Configure and compile packages
+            echo "CONFIG_PACKAGE_your-package-name=m" >> .config
+            make defconfig
+            make package/compile -j$(nproc) V=sc
+
+            # Save compiled packages
+            mkdir -p /workspace/artifacts/$arch
+            find bin/ -name "*.ipk" -exec cp {} /workspace/artifacts/$arch/ \;
+
+            # Cleanup for next architecture
+            cd ..
+            rm -rf sdk sdk.tar.xz
+          done
+
+      # Step 4: Upload Artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: OpenWrt-Packages
+          path: /workspace/artifacts
