@@ -20,26 +20,34 @@ jobs:
         run: |
           docker pull openwrt/sdk:x86_64
 
-      # Step 3: Prepare SDK and Build Packages
+      # Step 3: Build Packages inside Docker Container
       - name: Build Packages
         run: |
-          # Create a directory for the OpenWrt SDK
-          mkdir -p $GITHUB_WORKSPACE/openwrt-sdk
-
-          # Run Docker container for building packages
           docker run --rm -v $GITHUB_WORKSPACE:/workspace openwrt/sdk:x86_64 bash -c "
-            cd /workspace &&
-            mkdir -p openwrt-sdk/package/custom &&
-            cp -r ./your-package-directory/* openwrt-sdk/package/custom/ &&
-            cd openwrt-sdk &&
+            set -e
+            TMP_DIR=\$(mktemp -d -t sdk-XXXXXXXXXX) &&
+            echo 'Temporary directory created: \$TMP_DIR' &&
+            cd \$TMP_DIR &&
+            
+            # Clone SDK
+            git clone https://github.com/openwrt/openwrt-sdk.git sdk &&
+            cd sdk &&
+            
+            # Add custom packages
+            mkdir -p package/custom &&
+            cp -r /workspace/your-package-directory/* package/custom/ &&
+            
+            # Update and install feeds
             ./scripts/feeds update -a &&
             ./scripts/feeds install -a &&
-            make defconfig &&
-            for arch in \$(cat ../architectures.txt); do
-              echo 'Building for architecture: \$arch';
+            
+            # Build packages for all architectures
+            for arch in \$(cat /workspace/architectures.txt); do
+              echo 'Building for architecture: \$arch' &&
+              make defconfig &&
               make package/compile V=s ARCH=\$arch &&
-              mkdir -p ../compiled-packages/\$arch &&
-              cp bin/packages/\$arch/*.ipk ../compiled-packages/\$arch/;
+              mkdir -p /workspace/compiled-packages/\$arch &&
+              cp bin/packages/\$arch/*.ipk /workspace/compiled-packages/\$arch/;
             done
           "
 
