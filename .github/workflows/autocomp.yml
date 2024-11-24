@@ -1,4 +1,4 @@
-name: Build OpenWrt Packages
+name: Build and Deploy OpenWrt Packages
 
 on:
   push:
@@ -11,55 +11,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the Repository
-      - name: Checkout Repository
+      # Step 1: Checkout Repository A
+      - name: Checkout Repository A
         uses: actions/checkout@v3
 
-      # Step 2: Pull OpenWrt SDK Docker Image
+      # Step 2: Define Architectures
+      - name: Define Architectures
+        run: |
+          echo "x86_64 arm_cortex-a9 mipsel_24kc mips_24kc aarch64_generic powerpc_8540" > architectures.txt
+
+      # Step 3: Pull OpenWrt SDK Docker Image
       - name: Pull OpenWrt SDK Docker Image
         run: |
           docker pull openwrt/sdk:x86_64
 
-      # Step 3: Build Packages inside Docker Container
+      # Step 4: Build Packages for All Architectures
       - name: Build Packages
         run: |
-          docker run --rm -v $GITHUB_WORKSPACE:/workspace openwrt/sdk:x86_64 bash -c "
-            set -e
-            TMP_DIR=\$(mktemp -d -t sdk-XXXXXXXXXX) &&
-            echo 'Temporary directory created: \$TMP_DIR' &&
-            cd \$TMP_DIR &&
-            
-            # Clone SDK
-            git clone https://github.com/openwrt/openwrt-sdk.git sdk &&
-            cd sdk &&
-            
-            # Add custom packages
-            mkdir -p package/custom &&
-            cp -r /workspace/your-package-directory/* package/custom/ &&
-            
-            # Update and install feeds
-            ./scripts/feeds update -a &&
-            ./scripts/feeds install -a &&
-            
-            # Build packages for all architectures
-            for arch in \$(cat /workspace/architectures.txt); do
-              echo 'Building for architecture: \$arch' &&
-              make defconfig &&
-              make package/compile V=s ARCH=\$arch &&
-              mkdir -p /workspace/compiled-packages/\$arch &&
-              cp bin/packages/\$arch/*.ipk /workspace/compiled-packages/\$arch/;
-            done
-          "
+          docker run --rm \
+            -v $GITHUB_WORKSPACE:/workspace \
+            openwrt/sdk:x86_64 bash -c "
+              set -e
+              mkdir -p /workspace/output
+              cp -r /workspace/* /sdk/package/custom
+              ./scripts/feeds update -a
+              ./scripts/feeds install -a
+              for arch in \$(cat /workspace/architectures.txt); do
+                echo 'Building for architecture: \$arch'
+                make defconfig
+                make package/compile V=s ARCH=\$arch
+                mkdir -p /workspace/output/\$arch
+                cp bin/packages/\$arch/*.ipk /workspace/output/\$arch/
+              done
+            "
 
-      # Step 4: Push Built Packages to Target Repository
-      - name: Push to Target Repository
+      # Step 5: Push Compiled Packages to Repository B
+      - name: Push to Repository B
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git clone https://github.com/peditx/passrepo.git target-repo
-          cd target-repo
+          git clone https://github.com/peditx/passrepo.git passrepo
+          cd passrepo
           rm -rf *
-          cp -r ../compiled-packages/* .
+          cp -r ../output/* .
           git add .
           git commit -m "Update compiled packages"
           git push origin main
