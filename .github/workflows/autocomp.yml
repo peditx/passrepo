@@ -176,8 +176,8 @@ jobs:
 
     - name: Save and Commit Passwall Packages
       run: |
-        git config --global user.email "your-email@example.com"
-        git config --global user.name "Your Name"
+        git config --global user.email "pedram.ale@me.com"
+        git config --global user.name "peditx"
         cd sdk
         mkdir -p ../artifacts/${{ matrix.platform }}
         if [ ! -d "sdk/bin/targets/" ]; then
