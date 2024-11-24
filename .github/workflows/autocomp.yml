@@ -30,6 +30,7 @@ jobs:
         run: |
           docker run --rm \
             -v $GITHUB_WORKSPACE:/workspace \
+            --user root \
             openwrt/sdk:x86_64 bash -c "
               set -e
               mkdir -p /workspace/output
