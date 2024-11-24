@@ -41,8 +41,8 @@ jobs:
       - name: Setup OpenWrt SDK for ${{ matrix.architecture }}
         run: |
           ARCH=${{ matrix.architecture }}
-          SDK_FILE="openwrt-sdk-23.05.0-${ARCH}_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
-          SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/${ARCH}/$SDK_FILE"
+          SDK_FILE="openwrt-sdk-22.03.5-${ARCH}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" # updated version
+          SDK_URL="https://downloads.openwrt.org/releases/22.03.5/targets/${ARCH}/$SDK_FILE"
 
           # Check if SDK file exists
           echo "Building for architecture: $ARCH"
