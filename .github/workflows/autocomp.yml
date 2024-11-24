@@ -33,10 +33,10 @@ jobs:
         run: |
           docker run --rm \
             -v $GITHUB_WORKSPACE:/workspace \
-            --user root \
             openwrt/sdk:x86_64 bash -c "
               set -e
-              mkdir -p /workspace/output
+              TMP_OUTPUT_DIR=\$(mktemp -d)
+              mkdir -p \$TMP_OUTPUT_DIR
               cp -r /workspace/* /sdk/package/custom
               ./scripts/feeds update -a
               ./scripts/feeds install -a
@@ -44,9 +44,10 @@ jobs:
                 echo 'Building for architecture: \$arch'
                 make defconfig
                 make package/compile V=s ARCH=\$arch
-                mkdir -p /workspace/output/\$arch
-                cp bin/packages/\$arch/*.ipk /workspace/output/\$arch/
+                mkdir -p \$TMP_OUTPUT_DIR/\$arch
+                cp bin/packages/\$arch/*.ipk \$TMP_OUTPUT_DIR/\$arch/
               done
+              cp -r \$TMP_OUTPUT_DIR/* /workspace/output/
             "
 
       # Step 5: Push Compiled Packages to Repository B
