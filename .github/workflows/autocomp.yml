@@ -110,9 +110,11 @@ jobs:
 
     - name: Download SDK for ${{ matrix.platform }}
       run: |
-        wget ${{ matrix.url_sdk }}
+        echo "Downloading SDK for platform: ${{ matrix.platform }}"
+        wget ${{ matrix.url_sdk }} -O openwrt-sdk.tar.xz
         sdk_dir="sdk-${{ matrix.platform }}"
-        mkdir $sdk_dir && tar -xJf openwrt-sdk-*.tar.xz -C $sdk_dir --strip-components=1
+        mkdir -p $sdk_dir
+        tar -xJf openwrt-sdk.tar.xz -C $sdk_dir --strip-components=1
         cd $sdk_dir
         echo "SDK downloaded and extracted."
 
