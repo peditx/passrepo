@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout Source Repository (first repository)
+      # Step 1: Checkout Source Repository
       - name: Checkout Source Repository
         uses: actions/checkout@v3
 
@@ -30,21 +30,30 @@ jobs:
           ./scripts/feeds install -a
           cd ..
 
-      # Step 4: Build Packages for All Architectures
-      - name: Build Packages for All Architectures
+      # Step 4: Copy Custom Packages from Source Repo to OpenWrt SDK
+      - name: Copy Custom Packages
+        run: |
+          mkdir -p openwrt-sdk/package/custom
+          cp -r ./* openwrt-sdk/package/custom/
+
+      # Step 5: Build Packages for Each Architecture
+      - name: Build Packages for Each Architecture
         run: |
           mkdir -p openwrt-sdk
           cp -r ./* openwrt-sdk/
           cd openwrt-sdk
-          # For each architecture
           for arch in $(cat ../architectures.txt); do
-            ./staging_dir/host/bin/make package/compile ARCH=$arch
+            # Load default config for architecture
+            make defconfig ARCH=$arch
+            # Build the package
+            make package/compile ARCH=$arch
+            # Ensure IPK files are copied
             mkdir -p ../compiled-packages/$arch
-            cp bin/packages/$arch/* ../compiled-packages/$arch/
+            cp bin/packages/$arch/*.ipk ../compiled-packages/$arch/
           done
 
-      # Step 5: Push Compiled Packages to Target Repository
-      - name: Push to Target Repository (second repository)
+      # Step 6: Push Compiled Packages to Target Repository
+      - name: Push to Target Repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
