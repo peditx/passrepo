@@ -117,7 +117,14 @@ jobs:
         tar -xJf openwrt-sdk.tar.xz -C $sdk_dir --strip-components=1
         cd $sdk_dir
         echo "SDK downloaded and extracted."
-
+    
+    - name: Ensure platform directories exist
+      run: |
+        # این خط دایرکتوری‌های لازم را برای هر معماری ایجاد می‌کند
+        mkdir -p "path/to/${{ matrix.platform }}" 
+        cd "path/to/${{ matrix.platform }}"
+        echo "Now in the ${{ matrix.platform }} directory."
+        
     - name: Setup OpenWrt SDK
       run: |
         cd ${{ matrix.platform }}
