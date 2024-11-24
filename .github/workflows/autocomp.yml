@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set environment variable
-        run: echo "packages=xiaorouji/openwrt-passwall-packages" >> $GITHUB_ENV
+        run: echo "packages=example-package" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -121,7 +121,7 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-       - name: Add Passwall package
+      - name: Add Passwall package
         run: |
           cd sdk/package
           git clone https://github.com/xiaorouji/openwrt-passwall-packages
