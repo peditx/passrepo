@@ -42,7 +42,38 @@ jobs:
         run: |
           ARCH=${{ matrix.architecture }}
           SDK_FILE="openwrt-sdk-22.03.5-${ARCH}_gcc-12.3.0_musl.Linux-x86_64.tar.xz" # updated version
-          SDK_URL="https://downloads.openwrt.org/releases/22.03.5/targets/${ARCH}/$SDK_FILE"
+          if [ "$ARCH" == "aarch64_cortex-a53" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/mvebu/cortexa53/$SDK_FILE"
+          elif [ "$ARCH" == "aarch64_generic" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/rockchip/armv8/$SDK_FILE"
+          elif [ "$ARCH" == "ar71xx_generic" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/ar71xx/generic/$SDK_FILE"
+          elif [ "$ARCH" == "bcm53xx" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/bcm53xx/generic/$SDK_FILE"
+          elif [ "$ARCH" == "bmx280" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/bmx280/generic/$SDK_FILE"
+          elif [ "$ARCH" == "brcm47xx" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/brcm47xx/generic/$SDK_FILE"
+          elif [ "$ARCH" == "ipq40xx" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/ipq40xx/generic/$SDK_FILE"
+          elif [ "$ARCH" == "mips_24kc" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/ath79/generic/$SDK_FILE"
+          elif [ "$ARCH" == "mipsel_24kc" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/ramips/rt288x/$SDK_FILE"
+          elif [ "$ARCH" == "mips_mips32" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/bcm63xx/generic/$SDK_FILE"
+          elif [ "$ARCH" == "ppc64le" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/ppc64le/generic/$SDK_FILE"
+          elif [ "$ARCH" == "ramips_mt76x8" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/ramips/mt76x8/$SDK_FILE"
+          elif [ "$ARCH" == "ramips_mt7621" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/ramips/mt7621/$SDK_FILE"
+          elif [ "$ARCH" == "x86_64" ]; then
+            SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/x86/64/$SDK_FILE"
+          else
+            echo "Unsupported architecture: $ARCH"
+            exit 1
+          fi
 
           # Check if SDK file exists
           echo "Building for architecture: $ARCH"
