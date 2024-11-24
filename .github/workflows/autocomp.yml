@@ -1,4 +1,4 @@
-name: Build and Push Custom Packages with Docker
+name: Build OpenWrt Packages
 
 on:
   push:
@@ -7,41 +7,43 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-push:
+  build-packages:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout Source Repository
-      - name: Checkout Source Repository
+      # Step 1: Checkout the Repository
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Docker
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v2
-
-      # Step 3: Pull OpenWrt SDK Docker Image (use correct tag)
+      # Step 2: Pull OpenWrt SDK Docker Image
       - name: Pull OpenWrt SDK Docker Image
         run: |
-          docker pull openwrt/sdk:x86_64  # or use another tag if necessary
+          docker pull openwrt/sdk:x86_64
 
-      # Step 4: Run OpenWrt SDK Build inside Docker container
-      - name: Run OpenWrt SDK Build in Docker
+      # Step 3: Prepare SDK and Build Packages
+      - name: Build Packages
         run: |
-          docker run --rm -v $(pwd):/workspace openwrt/sdk:x86_64 bash -c "
+          # Create a directory for the OpenWrt SDK
+          mkdir -p $GITHUB_WORKSPACE/openwrt-sdk
+
+          # Run Docker container for building packages
+          docker run --rm -v $GITHUB_WORKSPACE:/workspace openwrt/sdk:x86_64 bash -c "
             cd /workspace &&
             mkdir -p openwrt-sdk/package/custom &&
             cp -r ./your-package-directory/* openwrt-sdk/package/custom/ &&
             cd openwrt-sdk &&
+            ./scripts/feeds update -a &&
+            ./scripts/feeds install -a &&
+            make defconfig &&
             for arch in \$(cat ../architectures.txt); do
               echo 'Building for architecture: \$arch';
-              make defconfig ARCH=\$arch &&
-              make package/compile ARCH=\$arch &&
+              make package/compile V=s ARCH=\$arch &&
               mkdir -p ../compiled-packages/\$arch &&
               cp bin/packages/\$arch/*.ipk ../compiled-packages/\$arch/;
             done
           "
 
-      # Step 5: Push Compiled Packages to Target Repository
+      # Step 4: Push Built Packages to Target Repository
       - name: Push to Target Repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
