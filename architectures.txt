@@ -1,0 +1,17 @@
+x86_64
+x86_32
+i386
+arm_cortex-a9
+arm_cortex-a7
+armv7-a
+armv5te
+arm64_cortex-a53
+aarch64_cortex-a53
+mips_24kc
+mips_74kc
+mipsel_24kc
+mipsel_74kc
+mips64el
+ppc64
+lantiq_xrx200
+brcm47xx
