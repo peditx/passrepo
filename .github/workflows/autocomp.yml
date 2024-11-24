@@ -178,8 +178,16 @@ jobs:
       run: |
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
-        git tag v1.0.5-${{ matrix.platform }} -m "Release for ${{ matrix.platform }}"
-        git push origin v1.0.5-${{ matrix.platform }}
+        if git rev-parse "v1.0.5-${{ matrix.platform }}" >/dev/null 2>&1; then
+          echo "Tag v1.0.5-${{ matrix.platform }} already exists"
+          new_tag=$(date +"v1.0.5-${{ matrix.platform }}-%Y%m%d%H%M%S")
+          echo "Creating new tag: $new_tag"
+          git tag $new_tag -m "Release for ${{ matrix.platform }}"
+          git push origin $new_tag
+        else
+          git tag v1.0.5-${{ matrix.platform }} -m "Release for ${{ matrix.platform }}"
+          git push origin v1.0.5-${{ matrix.platform }}
+        fi
 
     - name: Save Passwall package for ${{ matrix.platform }}
       run: |
@@ -195,7 +203,7 @@ jobs:
       id: create_release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v1.0.5-${{ matrix.platform }}
+        tag_name: ${{ steps.create_release.outputs.tag_name }}
         name: passwall release - ${{ matrix.platform }} - ${{ env.timestamp }}
         body: 'Release for architecture: ${{ matrix.platform }}'
 
