@@ -1,4 +1,4 @@
-name: Build and Release OpenWrt Packages for All Architectures
+name: Build and Release luci-theme-peditx for Multiple Architectures
 
 on:
   push:
@@ -11,70 +11,77 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        architecture:
+        architecture: 
           - aarch64_cortex-a53
-          - aarch64_cortex-a72
           - aarch64_generic
-          - arm_arm1176jzf-s_vfp
-          - arm_cortex-a15_neon-vfpv4
-          - arm_cortex-a7_neon-vfpv4
-          - arm_cortex-a8_vfpv3
-          - i386_pentium4
-          - mips_mips32
-          - mipsel_mips32
+          - ar71xx_generic
+          - bcm53xx
+          - bmx280
+          - brcm47xx
+          - ipq40xx
           - mips_24kc
           - mipsel_24kc
-          - powerpc_8540
+          - mips_mips32
+          - ppc64le
+          - ramips_mt76x8
+          - ramips_mt7621
           - x86_64
-          - arm_cortex-a9
-          - arm_cortex-m3
-          - armv8_64
+          - x86_64_gcc-12
+          - x86_64-musl
+          - x86_64_musl_gcc
     steps:
-      # Step 1: Checkout Code
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Install Dependencies
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libncurses5-dev gawk git gettext unzip zlib1g-dev file python3 python3-distutils curl
 
-      # Step 3: Build for Current Architecture (using matrix)
-      - name: Build for ${{ matrix.architecture }}
+      - name: Setup OpenWrt SDK for ${{ matrix.architecture }}
         run: |
-          echo "Building for architecture: ${{ matrix.architecture }}"
+          ARCH=${{ matrix.architecture }}
+          SDK_FILE="openwrt-sdk-23.05.0-${ARCH}_gcc-12.3.0_musl.Linux-x86_64.tar.xz"
+          SDK_URL="https://downloads.openwrt.org/releases/23.05.0/targets/${ARCH}/$SDK_FILE"
 
-          # Download and extract the SDK
-          wget https://downloads.openwrt.org/releases/23.05.0/targets/${{ matrix.architecture }}/openwrt-sdk-23.05.0-${{ matrix.architecture }}_gcc-12.3.0_musl.Linux-x86_64.tar.xz -O sdk.tar.xz
-          mkdir sdk && tar -xJf sdk.tar.xz -C sdk --strip-components=1
-
-          # Setup SDK and feeds
+          # Check if SDK file exists
+          echo "Building for architecture: $ARCH"
+          wget $SDK_URL
+          mkdir -p sdk
+          tar -xJf $SDK_FILE -C sdk --strip-components=1
           cd sdk
           echo "src-git packages https://github.com/openwrt/packages.git" > feeds.conf.default
           echo "src-git luci https://github.com/openwrt/luci.git" >> feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-          # Add custom packages
-          cp -r $GITHUB_WORKSPACE/* ./package/custom/
-
-          # Configure and compile packages
-          echo "CONFIG_PACKAGE_your-package-name=m" >> .config
-          make defconfig
-          make package/compile -j$(nproc) V=sc
-
-          # Save compiled packages
-          mkdir -p /workspace/artifacts/${{ matrix.architecture }}
-          find bin/ -name "*.ipk" -exec cp {} /workspace/artifacts/${{ matrix.architecture }}/ \;
-
-          # Cleanup for next architecture
+      - name: Add luci-theme-peditx package
+        run: |
+          cd sdk/package
+          git clone https://github.com/peditx/luci-theme-peditx
           cd ..
-          rm -rf sdk sdk.tar.xz
+          echo "CONFIG_PACKAGE_luci-theme-peditx=m" >> .config
 
-      # Step 4: Upload Artifacts
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+      - name: Build luci-theme-peditx for ${{ matrix.architecture }}
+        run: |
+          cd sdk
+          make defconfig
+          make package/luci-theme-peditx/compile -j1 V=sc
+
+      - name: Save luci-theme-peditx package
+        run: |
+          cd sdk
+          mkdir -p artifacts
+          find bin/ -name "*.ipk" -exec cp {} artifacts/ \;
+
+      - name: Create Release for ${{ matrix.architecture }}
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          name: OpenWrt-Packages
-          path: /workspace/artifacts
+          tag_name: v1.0.5-${{ matrix.architecture }}
+          name: luci-theme-peditx release - ${{ matrix.architecture }} - ${{env.timestamp}}
+          body: latest release of luci-theme-peditx theme for OpenWrt on ${{ matrix.architecture }} architecture.
+          files: sdk/artifacts/luci-theme-peditx_*.ipk
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          timestamp: ${{ github.run_id }}
