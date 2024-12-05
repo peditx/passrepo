@@ -1,0 +1,18 @@
+[__config__]
+oldver = "cur_ver.json"
+newver = "new_ver.json"
+
+[passwall]
+source = "git"
+git = "https://github.com/peditx/openwrt-passwall"
+use_commit = true
+
+[passwall2]
+source = "git"
+git = "https://github.com/peditx/openwrt-passwall2"
+use_commit = true
+
+[packages]
+source = "git"
+git = "https://github.com/xiaorouji/openwrt-passwall-packages"
+use_commit = true
