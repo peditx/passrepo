@@ -185,7 +185,6 @@ jobs:
       - name: Add public key
         run: cp passwall.pub dist/
 
-
       - name: Push Changes to Repository
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
