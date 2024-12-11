@@ -2,6 +2,16 @@ name: Build and Release
 
 on:
   workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'Select the deploy target'
+        required: true
+        default: 'github'
+        type: choice
+        options:
+          - github
+          - sftp
+
   push:
     paths:
       - cur_ver.json
@@ -87,11 +97,6 @@ jobs:
         include: ${{ fromJson(needs.gather_matrix.outputs.result) }}
 
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          swap-storage: false
-
       - name: Setup Python 3
         uses: actions/setup-python@v5
         with:
@@ -169,11 +174,17 @@ jobs:
   deploy:
     concurrency:
       group: deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-big
     needs: release
+    strategy:
+      matrix:
+        worker: [ 'worker1', 'worker2', 'worker3' ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Clean up disk space before deploy
+        run: sudo rm -rf /usr/share/dotnet & sudo rm -rf /opt/ghc & rm -rf logs/ & find /home/runner/runners/2.321.0/_diag/ -type f -name '*.log' -delete
 
       - name: Fetch All Builds
         uses: actions/download-artifact@v4
@@ -185,7 +196,8 @@ jobs:
       - name: Add public key
         run: cp passwall.pub dist/
 
-      - name: Push Changes to Repository
+      - name: Conditional Deploy
+        if: ${{ github.event.inputs.deploy_target == 'github' }}
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -199,3 +211,16 @@ jobs:
           git add .
           git commit -m "Add build outputs for $BRANCH_NAME"
           git push origin "$BRANCH_NAME"
+
+      - name: Upload to SFTP
+        if: ${{ github.event.inputs.deploy_target == 'sftp' }}
+        env:
+          SFTP_SERVER: ${{ secrets.SFTP_SERVER }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          sshpass -p $SFTP_PASSWORD sftp -oBatchMode=no -b - $SFTP_USER@$SFTP_SERVER << !
+          cd /path/to/upload
+          put -r dist/*
+          bye
+          !
