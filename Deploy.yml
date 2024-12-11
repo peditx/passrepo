@@ -1,0 +1,66 @@
+name: Deploy Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'Select the deploy target'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+          - github
+          - sftp
+          - both
+
+jobs:
+  deploy:
+    concurrency:
+      group: deploy
+    runs-on: ubuntu-big
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: openwrt-passwall-*
+          path: dist/
+          retention-days: 7
+
+      - name: Add public key
+        run: cp passwall.pub dist/
+
+      - name: Clean up disk space before deploy
+        run: sudo rm -rf /usr/share/dotnet & sudo rm -rf /opt/ghc & rm -rf logs/ & find /home/runner/runners/2.321.0/_diag/ -type f -name '*.log' -delete
+
+      - name: Conditional Deploy to GitHub
+        if: ${{ github.event.inputs.deploy_target == 'github' || github.event.inputs.deploy_target == 'both' }}
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          BRANCH_NAME="build-output/deploy"
+          git checkout -b "$BRANCH_NAME"
+
+          cp -r dist/* .
+          git add .
+          git commit -m "Add build outputs for $BRANCH_NAME"
+          git push origin "$BRANCH_NAME"
+
+      - name: Conditional Upload to SFTP
+        if: ${{ github.event.inputs.deploy_target == 'sftp' || github.event.inputs.deploy_target == 'both' }}
+        env:
+          SFTP_SERVER: ${{ secrets.SFTP_SERVER }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          sshpass -p $SFTP_PASSWORD sftp -oBatchMode=no -b - $SFTP_USER@$SFTP_SERVER << !
+          mkdir -p /var/www/html/passwall-packages/
+          cd /var/www/html/passwall-packages/
+          put -r dist/*
+          bye
+          !
