@@ -17,7 +17,7 @@ jobs:
   deploy:
     concurrency:
       group: deploy
-    runs-on: ubuntu-big
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
