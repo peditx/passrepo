@@ -5,12 +5,13 @@ on:
     inputs:
       deploy_target:
         description: 'Select the deploy target'
-        required: true
-        default: 'github'
+        required: false
+        default: 'both'
         type: choice
         options:
           - github
           - sftp
+          - both
 
   push:
     paths:
@@ -196,8 +197,8 @@ jobs:
       - name: Add public key
         run: cp passwall.pub dist/
 
-      - name: Conditional Deploy
-        if: ${{ github.event.inputs.deploy_target == 'github' }}
+      - name: Conditional Deploy to GitHub
+        if: ${{ github.event.inputs.deploy_target == 'github' || github.event.inputs.deploy_target == 'both' }}
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -212,15 +213,16 @@ jobs:
           git commit -m "Add build outputs for $BRANCH_NAME"
           git push origin "$BRANCH_NAME"
 
-      - name: Upload to SFTP
-        if: ${{ github.event.inputs.deploy_target == 'sftp' }}
+      - name: Conditional Upload to SFTP
+        if: ${{ github.event.inputs.deploy_target == 'sftp' || github.event.inputs.deploy_target == 'both' }}
         env:
           SFTP_SERVER: ${{ secrets.SFTP_SERVER }}
           SFTP_USER: ${{ secrets.SFTP_USER }}
           SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
         run: |
           sshpass -p $SFTP_PASSWORD sftp -oBatchMode=no -b - $SFTP_USER@$SFTP_SERVER << !
-          cd /path/to/upload
+          mkdir -p /var/www/html/passwall-packages/
+          cd /var/www/html/passwall-packages/
           put -r dist/*
           bye
           !
