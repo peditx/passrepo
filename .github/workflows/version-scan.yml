@@ -1,0 +1,43 @@
+name: Scan openwrt-passwall Version
+
+on:
+  schedule:
+    - cron: "0 18 * * *" # every day at UTC+8 2:00AM
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Check Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install nvchecker
+        run: pip3 install nvchecker
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT }}
+
+      - name: Compare version
+        id: compare_version
+        run: |
+          nvchecker -c nvchecker.toml
+          vers=$(nvcmp -c nvchecker.toml --exit-status -aj) && exit || echo "ret=$?" >> $GITHUB_OUTPUT
+          nvtake -c nvchecker.toml --all
+          jq -cr 'map("\(.name)=\(.newver)") | .[]' <<< $vers >> $GITHUB_OUTPUT
+
+      - name: Commit new version
+        if: steps.compare_version.outputs.ret == 4
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: |
+            chore: bump version
+
+            passwall: peditx/openwrt-passwall@${{ steps.compare_version.outputs.passwall }}
+            passwall2: peditx/openwrt-passwall2@${{ steps.compare_version.outputs.passwall2 }}
+            packages: xiaorouji/openwrt-passwall-packages@${{ steps.compare_version.outputs.packages }}
