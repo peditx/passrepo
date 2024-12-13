@@ -1,0 +1,25 @@
+name: Test RSYNC Upload
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Add private key
+        env:
+          PRIVATE_KEY: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SFTP_SERVER }} >> ~/.ssh/known_hosts
+
+      - name: Create a test file
+        run: echo "This is a test file" > test_file.txt
+
+      - name: Upload File with rsync
+        run: |
+          rsync -rvzc --delete test_file.txt ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_SERVER }}:/var/www/html/passwall-packages/
