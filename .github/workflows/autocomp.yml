@@ -194,4 +194,4 @@ jobs:
           remote_path: /var/wwww/html/passwall-packages/
           remote_host: ${{ secrets.SFTP_SERVER}}
           remote_user: ${{ secrets.SFTP_USERNAME }}
-          remote_key: ${{ secrets.SFTP_PASSWORD }}
+          remote_key: ${{ secrets.SFTP_PRIVATE_KEY }}
