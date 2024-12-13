@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Add private key
         env:
-          PRIVATE_KEY: ${{ secrets.SFTP_PASSWORD }}
+          PRIVATE_KEY: ${{ secrets.SFTP_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
           echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
