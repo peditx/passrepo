@@ -1,4 +1,4 @@
-# openwrt-passwall-build
+# PeDitX Repository
 
 Binary distribution of [PeDitX/openwrt-passwall](https://github.com/peditx/openwrt-passwall) built with official OpenWRT SDK.
 
