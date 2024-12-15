@@ -1,5 +1,7 @@
 # PeDitX Repository
 
+[**English**](README.md) | [**فارسی**](README_fa.md) | [**中文**](README_zh.md) | [**Русский**](README_ru.md)
+
 Binary distribution of [PeDitX/openwrt-passwall](https://github.com/peditx/openwrt-passwall) built with official OpenWRT SDK.
 
 [![Build and Release](https://github.com/dianlujitao/openwrt-passwall-build/actions/workflows/build-release.yml/badge.svg)](https://github.com/peditx/passrepo/actions/workflows/autocomp.yml)
@@ -43,6 +45,13 @@ Binary distribution of [PeDitX/openwrt-passwall](https://github.com/peditx/openw
     ```sh
     opkg update
     opkg install luci-app-passwall
+    ```
+
+or
+
+    ```sh
+    opkg update
+    opkg install luci-app-passwall2
     ```
 
 ## Manual Install
