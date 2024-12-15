@@ -191,7 +191,7 @@ jobs:
         with:
           switches: -rvzc --delete
           path: dist/
-          remote_path: /home/passwall-packages/
+          remote_path: /var/www/html/passwall-packages/
           remote_host: ${{ secrets.SFTP_SERVER}}
           remote_user: ${{ secrets.SFTP_USERNAME }}
           remote_key: ${{ secrets.SFTP_PRIVATE_KEY }}
