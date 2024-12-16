@@ -49,10 +49,10 @@ Binary distribution of [PeDitX/openwrt-passwall](https://github.com/peditx/openw
 
 or
 
-    ```sh
-    opkg update
-    opkg install luci-app-passwall2
-    ```
+```sh
+  opkg update
+  opkg install luci-app-passwall2
+```
 
 ## Manual Install
 
