@@ -47,10 +47,10 @@
 
 یا
 
-    ```sh
+   ```sh
     opkg update
     opkg install luci-app-passwall2
-    ```
+   ```
 
 ## نصب دستی
 
