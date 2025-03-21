@@ -2,8 +2,8 @@
   "version": 2,
   "data": {
     "packages": {
-      "version": "bb8ca4c0be036e15f1545483ec5f2326ee25b863",
-      "revision": "bb8ca4c0be036e15f1545483ec5f2326ee25b863"
+      "version": "6d4bc0f69a8ebb8393b17daad0d4a05ad479c4b4",
+      "revision": "6d4bc0f69a8ebb8393b17daad0d4a05ad479c4b4"
     },
     "passwall": {
       "version": "d8a482fd41b8fbd7b2c66be199e80b537eec75dc",
