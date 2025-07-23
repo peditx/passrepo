@@ -6,12 +6,12 @@
       "revision": "b50c786682128ff2981b567c3957c8ba4055f03e"
     },
     "passwall": {
-      "version": "49e836d28eccb7af0a86443db8ef218967ca4967",
-      "revision": "49e836d28eccb7af0a86443db8ef218967ca4967"
+      "version": "23c6edaa0d7761a6f3076ca1a9aa066be41bc773",
+      "revision": "23c6edaa0d7761a6f3076ca1a9aa066be41bc773"
     },
     "passwall2": {
-      "version": "14a5bbece2579f8e258756e95176a4636d4ac8d9",
-      "revision": "14a5bbece2579f8e258756e95176a4636d4ac8d9"
+      "version": "cb634ae21d95e11333c8dc75947e36304a5321c3",
+      "revision": "cb634ae21d95e11333c8dc75947e36304a5321c3"
     }
   }
 }
